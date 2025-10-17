@@ -6,3 +6,4 @@ streamlit
    PyPDF2
    python-docx
    openai-whisper  # optional for audio
+   groq
