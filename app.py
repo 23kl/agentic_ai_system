@@ -21,7 +21,7 @@ from groq import Groq
 # Set your Grok API key in Streamlit secrets or environment variable
 # For Streamlit Cloud: Add to secrets.toml
 # GROK_API_KEY = "your-key-here"
-GROQ_MODEL = "llama-3.1-70b-versatile"
+GROQ_MODEL = "llama-3.2"
 # ============================================
 
 # ========== PRE-LOAD CONFIGURATION ==========
@@ -605,5 +605,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+   
    
    
