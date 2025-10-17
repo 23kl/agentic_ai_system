@@ -14,14 +14,14 @@ import PyPDF2
 import docx
 import random
 import requests
-from openai import OpenAI
+from groq import Groq
+
 
 # ========== GROK API CONFIGURATION ==========
 # Set your Grok API key in Streamlit secrets or environment variable
 # For Streamlit Cloud: Add to secrets.toml
 # GROK_API_KEY = "your-key-here"
-GROK_API_BASE = "https://api.x.ai/v1"
-GROK_MODEL = "grok-beta"  # or "grok-vision-beta" for images
+GROQ_MODEL = "llama-3.1-70b-versatile"
 # ============================================
 
 # ========== PRE-LOAD CONFIGURATION ==========
@@ -38,67 +38,36 @@ except ImportError:
     WHISPER_AVAILABLE = False
 
 
-def get_grok_client():
-    """Initialize Grok API client"""
-    api_key = os.environ.get("GROK_API_KEY") or st.secrets.get("GROK_API_KEY")
+def get_groq_client():
+    """Initialize Groq API client"""
+    api_key = os.environ.get("GROQ_API_KEY") or st.secrets.get("GROQ_API_KEY")
     if not api_key:
-        st.error("⚠️ GROK_API_KEY not found. Please set it in secrets or environment variables.")
+        st.error("⚠️ GROQ_API_KEY not found. Please set it in secrets or environment variables.")
         st.stop()
-    return OpenAI(api_key=api_key, base_url=GROK_API_BASE)
+    return Groq(api_key=api_key)
 
 
-def analyze_with_grok(prompt: str, model: str = GROK_MODEL) -> str:
-    """Generate response using Grok API"""
+def analyze_with_groq(prompt: str, model: str = GROQ_MODEL) -> str:
+    """Generate response using Groq API"""
     try:
-        client = get_grok_client()
+        client = get_groq_client()
         response = client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.3,  # Lower for more factual responses
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        st.error(f"Grok API Error: {e}")
-        return f"Error generating response: {str(e)}"
-
-
-def analyze_image_with_grok(image_path: str, prompt: str = None) -> str:
-    """Analyze image using Grok Vision API"""
-    try:
-        client = get_grok_client()
-        
-        # Encode image
-        with open(image_path, 'rb') as f:
-            img_data = base64.b64encode(f.read()).decode('utf-8')
-        
-        default_prompt = """Analyze this image for misinformation indicators:
-1. Identify all visible text, dates, timestamps, locations
-2. Detect signs of manipulation (inconsistent lighting, artifacts, unnatural elements)
-3. Identify context clues (setting, people, events)
-4. Note any watermarks, logos, or source indicators
-5. Assess authenticity likelihood (High/Medium/Low)
-Provide detailed findings."""
-        
-        response = client.chat.completions.create(
-            model="grok-vision-beta",
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt or default_prompt},
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{img_data}"
-                        }
-                    }
-                ]
-            }],
             temperature=0.3,
         )
         return response.choices[0].message.content
     except Exception as e:
-        st.error(f"Grok Vision API Error: {e}")
-        return f"Image: {os.path.basename(image_path)}"
+        st.error(f"Groq API Error: {e}")
+        return f"Error generating response: {str(e)}"
+
+
+
+def analyze_image_with_groq(image_path: str, prompt: str = None) -> str:
+    """Analyze image (fallback mode — Groq doesn't support vision yet)"""
+    st.warning("⚠️ Groq API currently does not support image analysis. Skipping visual processing.")
+    return f"Image: {os.path.basename(image_path)} (visual analysis not available)"
+
 
 
 class MisinformationDetectionRAG:
@@ -220,7 +189,8 @@ SOURCE: {source or 'User submission'}"""
     
     def add_image_evidence(self, path: str, metadata: Dict = None) -> Tuple[str, str]:
         """Add image evidence with Grok Vision analysis"""
-        analysis = analyze_image_with_grok(path)
+        analysis = analysis = analyze_image_with_groq(path)
+
         
         meta = metadata or {}
         meta.update({
@@ -305,7 +275,7 @@ Provide a structured analysis:
 
 Be objective, cite evidence, and explain your reasoning clearly."""
         
-        analysis = analyze_with_grok(prompt)
+        analysis =analyze_with_groq(prompt)
         
         return {
             'claim': claim,
@@ -370,7 +340,7 @@ Identify:
 
 Provide actionable monitoring recommendations."""
         
-        pattern_analysis = analyze_with_grok(pattern_prompt)
+        pattern_analysis = analyze_with_groq(pattern_prompt)
         
         return {
             **results,
@@ -402,7 +372,7 @@ Write in plain language for general public:
 
 Format as a public announcement."""
         
-        return analyze_with_grok(prompt)
+        return analyze_with_groq(prompt)
 
 
 def preload_fact_checks(rag: MisinformationDetectionRAG):
@@ -635,4 +605,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+   
    
