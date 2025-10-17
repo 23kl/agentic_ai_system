@@ -1,0 +1,8 @@
+streamlit
+   chromadb
+   sentence-transformers
+   openai
+   Pillow
+   PyPDF2
+   python-docx
+   openai-whisper  # optional for audio
