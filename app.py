@@ -600,7 +600,7 @@ def main():
     
     # Footer
     st.markdown("---")
-    st.caption("🛡️ Misinformation Detection System | Powered by Grok AI | SIH 2025")
+    st.caption("🛡️ Misinformation Detection System")
 
 
 if __name__ == "__main__":
